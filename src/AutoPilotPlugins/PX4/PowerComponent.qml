@@ -88,8 +88,8 @@ SetupPage {
 
                 PowerComponentController {
                     id:         controller
-                    onOldFirmware:          mainWindow.showMessageDialog(qsTr("ESC Calibration"), qsTr("%1 cannot perform ESC Calibration with this version of firmware. You will need to upgrade to a newer firmware.").arg(QGroundControl.appName))
-                    onNewerFirmware:        mainWindow.showMessageDialog(qsTr("ESC Calibration"), qsTr("%1 cannot perform ESC Calibration with this version of firmware. You will need to upgrade %1.").arg(QGroundControl.appName))
+                    onOldFirmware:          mainWindow.showMessageDialog(qsTr("ESC Calibration"), qsTr("%1 cannot perform ESC Calibration with this version of firmware. You will need to upgrade to a newer firmware.").arg("Tecnodrone"))
+                    onNewerFirmware:        mainWindow.showMessageDialog(qsTr("ESC Calibration"), qsTr("%1 cannot perform ESC Calibration with this version of firmware. You will need to upgrade %1.").arg("Tecnodrone"))
                     onBatteryConnected:     mainWindow.showMessageDialog(qsTr("ESC Calibration"), qsTr("Performing calibration. This will take a few seconds.."))
                     onCalibrationFailed:    mainWindow.showMessageDialog(qsTr("ESC Calibration failed"), errorMessage)
                     onCalibrationSuccess:   mainWindow.showMessageDialog(qsTr("ESC Calibration"), qsTr("Calibration complete. You can disconnect your battery now if you like."))

@@ -175,11 +175,11 @@ Item {
             message:    qsTr("You need at least one item to create a KML.")
         }
     }
-
+ //  comienza el componente de la pantalla del plan de vuelo
     PlanMasterController {
         id: _planMasterController
 
-        Component.onCompleted: {
+        Component.onCompleted: { //cuando termine de cargar la pantalla carga los controladores.
             _planMasterController.start(false /* flyView */)
             _missionController.setCurrentPlanViewSeqNum(0, true)
             mainWindow.planMasterControllerPlan = _planMasterController
@@ -294,6 +294,8 @@ Item {
     function insertTakeItemAfterCurrent() {
         var nextIndex = _missionController.currentPlanViewVIIndex + 1
         _missionController.insertTakeoffItem(mapCenter(), nextIndex, true /* makeCurrentItem */)
+        //carlos: insertar takeoff al array <
+        fire.arrayTriangulo = new Array(2).fill(mapCenter());//   el metodo del controlador tiene comentado el parametro de la coordenada.>
     }
 
     function insertLandItemAfterCurrent() {
@@ -415,10 +417,16 @@ Item {
                     coordinate.longitude = coordinate.longitude.toFixed(_decimalPlaces)
                     coordinate.altitude = coordinate.altitude.toFixed(_decimalPlaces)
 
+                    console.log("clic en el mapa...\n")
+
                     switch (_editingLayer) {
                     case _layerMission:
                         if (_addWaypointOnClick) {
                             insertSimpleItemAfterCurrent(coordinate)
+                            //carlos: agregar un waypoint al array de coordenadas <
+                            //fire.arrayWaypoints.push(coordinate)
+                            fire.arrayTriangulo.splice(fire.arrayTriangulo.length -1, 0, coordinate);
+                            fire.calcularExtension()//>
                         } else if (_addROIOnClick) {
                             _addROIOnClick = false
                             insertROIAfterCurrent(coordinate)
@@ -580,10 +588,14 @@ Item {
             readonly property int patternButtonIndex:   4
             readonly property int landButtonIndex:      5
             readonly property int centerButtonIndex:    6
+            //carlos
+            readonly property int extensionButtonIndex: 7 //>
 
             property bool _isRallyLayer:    _editingLayer == _layerRallyPoints
             property bool _isMissionLayer:  _editingLayer == _layerMission
 
+
+                // Botones de la paleta izquierda
             model: [
                 /*{
                     name:               qsTr("Fly"),
@@ -640,7 +652,16 @@ Item {
                     buttonEnabled:      true,
                     buttonVisible:      true,
                     dropPanelComponent: centerMapDropPanel
-                }
+                },
+
+                //carlos: botón extensión <
+                {
+                    name:               qsTr("Extension"),
+                    iconSource:         "/qmlimages/fire.png",
+                    buttonEnabled:      true,
+                    buttonVisible:      fire.itCanFire  /* ,
+                    dropPanelComponent: centerMapDropPanel*/
+                }//>
             ]
 
             function allAddClickBoolsOff() {
@@ -689,7 +710,11 @@ Item {
                     allAddClickBoolsOff()
                     insertLandItemAfterCurrent()
                     break
-                }
+                // carlos: Calcular la extensión del incendio.
+                case extensionButtonIndex:
+                    fire.calcularAreaTotal()
+                }//>
+
             }
 
             onDropped: {
@@ -1225,6 +1250,51 @@ Item {
                     }
                 }
             }
+        }
+    }
+    //carlos: definir los elementos para calcular la extensión
+    Item{
+        id: fire
+        //property variant arrayWaypoints: []
+        //property var perimetroTotal
+        property variant arrayTriangulo: []
+        property variant arrayAreas: []
+        property var areaTotal
+        property var itCanFire
+
+        function calcularAreaTotal(){
+            areaTotal = arrayAreas.reduce(function(a,b){return a+b},0)
+            console.log("\nArea Total: ", areaTotal.toFixed(2))
+        }
+
+        function calcularExtension(){
+            var rad = function(x) {
+              return x * Math.PI / 180;
+            };
+            var area = 0
+            if (arrayTriangulo.length > 3){
+                    console.log("calculando...")
+                    for (var j = 0; j < arrayTriangulo.length - 1; j++)
+                    {
+                        const p1 = arrayTriangulo[j]
+                        const p2 = arrayTriangulo[j+1]
+
+                        const t1 = rad(p2.longitude - p1.longitude)
+                        const t2 = 2 + Math.sin(rad(p1.latitude))
+                        const t3 = Math.sin(rad(p2.latitude))
+                        area = area + (t1 * (t2  + t3));
+                    }
+
+                    area = area * 6378137 * 6378137 / 2;
+                    console.log("Area del polygono: ",Math.abs(area.toFixed(2)))
+
+                    arrayAreas.push(Math.abs(area));
+                    arrayTriangulo.splice(1,1);     //Elimina la segunda coordenada no necesaria para formar el siguiente array
+                    /*fire.arrayWaypoints = fire.arrayTriangulo.slice();
+                    arrayTriangulo = []*/
+                    itCanFire = true
+            }
+            console.log("\n")
         }
     }
 }

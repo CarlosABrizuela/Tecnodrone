@@ -317,7 +317,7 @@ Rectangle {
                                         icon:               StandardIcon.Warning
                                         standardButtons:    StandardButton.Yes | StandardButton.No
                                         title:              qsTr("Clear Settings")
-                                        text:               qsTr("All saved settings will be reset the next time you start %1. Is this really what you want?").arg(QGroundControl.appName)
+                                        text:               qsTr("All saved settings will be reset the next time you start %1. Is this really what you want?").arg("Tecnodrone")
                                         onYes: {
                                             QGroundControl.deleteAllSettingsNextBoot()
                                             clearDialog.visible = false
@@ -1179,7 +1179,7 @@ Rectangle {
                     Item { width: 1; height: _margins }
 
                     QGCLabel {
-                        text:               qsTr("%1 Version").arg(QGroundControl.appName)
+                        text:               qsTr("%1 Version").arg("Tecnodrone")
                         Layout.alignment:   Qt.AlignHCenter
                     }
                     QGCLabel {
