@@ -295,7 +295,8 @@ Item {
         var nextIndex = _missionController.currentPlanViewVIIndex + 1
         _missionController.insertTakeoffItem(mapCenter(), nextIndex, true /* makeCurrentItem */)
         //carlos: insertar takeoff al array <
-        fire.arrayTriangulo = new Array(2).fill(mapCenter());//   el metodo del controlador tiene comentado el parametro de la coordenada.>
+        //fire.arrayTriangulo = new Array(2).fill(mapCenter());//   el metodo del controlador tiene comentado el parametro de la coordenada.>
+        //console.log(fire.arrayTriangulo)
     }
 
     function insertLandItemAfterCurrent() {
@@ -417,16 +418,25 @@ Item {
                     coordinate.longitude = coordinate.longitude.toFixed(_decimalPlaces)
                     coordinate.altitude = coordinate.altitude.toFixed(_decimalPlaces)
 
-                    console.log("clic en el mapa...\n")
-
                     switch (_editingLayer) {
                     case _layerMission:
                         if (_addWaypointOnClick) {
                             insertSimpleItemAfterCurrent(coordinate)
                             //carlos: agregar un waypoint al array de coordenadas <
                             //fire.arrayWaypoints.push(coordinate)
-                            fire.arrayTriangulo.splice(fire.arrayTriangulo.length -1, 0, coordinate);
-                            fire.calcularExtension()//>
+                            if(fire.arrayTriangulo.length == 0){  //  o sea si es el primer waypoint ingresado
+                                fire.arrayTriangulo = new Array(2).fill(mapCenter());
+                            //    fire.arrayPuntosPerimetro.pop(coordinate)// = new Array(2).fill(mapCenter());
+                                fire.arrayPuntosPerimetro.push(coordinate)
+                            }
+                            else{
+                                fire.arrayTriangulo.splice(fire.arrayTriangulo.length -1, 0, coordinate);
+                                fire.arrayPuntosPerimetro.push(coordinate)
+                                //fire.arrayPuntosPerimetro.splice(fire.arrayTriangulo.length -1, 0, coordinate);
+
+                                console.log(fire.arrayTriangulo)
+                            }
+                            fire.calcularArea()//>
                         } else if (_addROIOnClick) {
                             _addROIOnClick = false
                             insertROIAfterCurrent(coordinate)
@@ -712,7 +722,7 @@ Item {
                     break
                 // carlos: Calcular la extensión del incendio.
                 case extensionButtonIndex:
-                    fire.calcularAreaTotal()
+                    fire.calcularAreaTotal();
                 }//>
 
             }
@@ -837,6 +847,30 @@ Item {
                                 text:       qsTr("Rally")
                                 enabled:    _rallyPointController.supported
                             }
+                        }
+                    }
+                }//carlos -info incendio
+                Rectangle {
+                    id: extension
+                    width: parent.width
+                    height: 300
+                    color: qgcPal.missionItemEditor
+                    radius: _radius
+                    Text {
+                        visible: fire.itCanFire
+                        text:               qsTr("El área del incendio es      :\n> "+fire.areaTotal+" km2"+
+                                                 "\nEl perímetro del incendio es:\n> "+fire.perimetroTotal +" km"+
+                                                 "\n\n Litros de agua requerídos aproximados: \n"+fire.aguaTotal+" litros")
+                        color:              qgcPal.text
+
+                    }
+                    Button {
+                        text: "Reset"
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        onClicked: {
+                            fire.reset()
+                            console.log("reseteado")
                         }
                     }
                 }
@@ -1256,24 +1290,28 @@ Item {
     Item{
         id: fire
         //property variant arrayWaypoints: []
-        //property var perimetroTotal
+        property var perimetroTotal: 0
+        property var arrayPuntosPerimetro: []
         property variant arrayTriangulo: []
         property variant arrayAreas: []
-        property var areaTotal
+        property var areaTotal: 0
+        property var aguaTotal: 0
         property var itCanFire
 
         function calcularAreaTotal(){
-            areaTotal = arrayAreas.reduce(function(a,b){return a+b},0)
-            console.log("\nArea Total: ", areaTotal.toFixed(2))
+            areaTotal = (arrayAreas.reduce(function(a,b){return a+b},0)).toFixed(3)
+            console.log("\n* Area Total: ", areaTotal," km cuadrados. *\n");
+            aguaTotal = (areaTotal*6000).toFixed(1); //area en km2 por un factor de 6000
+            fire.calcularPerimetro();
         }
 
-        function calcularExtension(){
+        function calcularArea(){
             var rad = function(x) {
               return x * Math.PI / 180;
             };
+
             var area = 0
             if (arrayTriangulo.length > 3){
-                    console.log("calculando...")
                     for (var j = 0; j < arrayTriangulo.length - 1; j++)
                     {
                         const p1 = arrayTriangulo[j]
@@ -1288,13 +1326,34 @@ Item {
                     area = area * 6378137 * 6378137 / 2;
                     console.log("Area del polygono: ",Math.abs(area.toFixed(2)))
 
-                    arrayAreas.push(Math.abs(area));
+                    arrayAreas.push(Math.abs((area/1000000).toFixed(3)));
                     arrayTriangulo.splice(1,1);     //Elimina la segunda coordenada no necesaria para formar el siguiente array
                     /*fire.arrayWaypoints = fire.arrayTriangulo.slice();
                     arrayTriangulo = []*/
                     itCanFire = true
             }
-            console.log("\n")
+        }
+        function calcularPerimetro(){
+            var d = 0
+            for(var k = 0; k < arrayPuntosPerimetro.length -1; k++){
+                 d += arrayPuntosPerimetro[k].distanceTo(arrayPuntosPerimetro[k+1])
+            }
+            console.log("k: ",k)
+            d += arrayPuntosPerimetro[k].distanceTo(arrayPuntosPerimetro[0])
+            perimetroTotal = (d/1000).toFixed(3);
+            console.log("\nperimetro acumulado",d," metros")
+        }
+        function reset(){
+            perimetroTotal = 0
+            areaTotal = 0
+            aguaTotal= 0
+            arrayTriangulo =  []
+            arrayAreas = []
+            arrayPuntosPerimetro = []
+            itCanFire = false
+            console.log("triangulo", arrayTriangulo)
+            console.log("perimetro", arrayPuntosPerimetro)
+            console.log("arrayAreas", arrayTriangulo)
         }
     }
 }
